@@ -62,7 +62,7 @@ def data(request):
             "species": curr.species.name,
             "system": curr.system.name,
             "gene": curr.gene_name,
-            "protein": curr.protein
+            "protein": curr.protein_name
         })
 
     return JsonResponse({
