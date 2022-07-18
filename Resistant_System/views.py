@@ -1,5 +1,5 @@
 import django.db
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from .models import *
 import json
@@ -28,6 +28,7 @@ def reloadData(request):
             system.save()
         except django.db.IntegrityError:
             system = System.objects.get(name=row[1])
+            pass
         data = Data(species=species, system=system, gene_name=row[2], protein_name=row[3])
         dataList.append(data)
 
@@ -59,6 +60,7 @@ def data(request):
 
     for curr in data:
         dataList.append({
+            "id": curr.id,
             "species": curr.species.name,
             "system": curr.system.name,
             "gene": curr.gene_name,
@@ -97,3 +99,30 @@ def system(request):
         "code": 200,
         "species": dataList
     })
+
+# Download All Data --- `GET /download`
+# Download Data by id list --- `POST /download`
+@csrf_exempt
+def download(request):
+    response = HttpResponse(
+        content_type='text/csv',
+        headers={'Content-Disposition': 'attachment; filename="ResistantSystemDataAll.csv"'},
+    )
+    writer = csv.writer(response)
+    writer.writerow(['id', 'species', 'system', 'gene name', 'protein name'])
+    if request.method == 'GET':
+        data = Data.objects.all()
+        for curr in data:
+            row = [curr.id, curr.species.name, curr.system.name, curr.gene_name, curr.protein_name]
+            writer.writerow(row)
+    elif request.method == 'POST':
+        request_body = request.body.decode('utf-8')
+        request_dict = json.loads(request_body)
+        idList = request_dict['index']
+        for id in idList:
+            data = Data.objects.get(id=id)
+            row = [data.id, data.species, data.system, data.gene_name, data.protein_name]
+            writer.writerow(row)
+    return response
+
+
