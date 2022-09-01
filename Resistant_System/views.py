@@ -1,5 +1,6 @@
 import django.db
 from django.http import JsonResponse, HttpResponse
+from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 from .models import *
 import json
@@ -11,28 +12,9 @@ import csv
 # Import data in batches from CSV files
 # The fields from left to right are (species, system, gene_name, protein_name)
 def reloadData(request):
-    file = csv.reader(open('./Resistant_System/csv/init.csv'), delimiter=' ')
-    dataList = []
     Species.objects.all().delete()
     System.objects.all().delete()
     Data.objects.all().delete()
-    for row in file:
-        species = Species(name=row[0])
-        system = System(name=row[1])
-        try:
-            species.save()
-        except django.db.IntegrityError:
-            species = Species.objects.get(name=row[0])
-            pass
-        try:
-            system.save()
-        except django.db.IntegrityError:
-            system = System.objects.get(name=row[1])
-            pass
-        data = Data(species=species, system=system, gene_name=row[2], protein_name=row[3])
-        dataList.append(data)
-
-    Data.objects.bulk_create(dataList)
     return JsonResponse({
         "code": 200,
         "mes": "success"
@@ -41,35 +23,41 @@ def reloadData(request):
 
 # Get all data --- `GET /data`
 # Get data by key word --- `POST /data`
-@csrf_exempt
-def data(request):
+def data(request, page):
+    pageSize = 50
     dataList = []
-    if request.method == 'GET':
-        data = Data.objects.all()
-    elif request.method == 'POST':
-        request_body = request.body.decode('utf-8')
-        request_dict = json.loads(request_body)
-        type = request_dict['type']
-        keyword = request_dict['keyword']
-        if type == 'species':
-            data = Data.objects.filter(species__name__regex=keyword)
-        elif type == 'system':
-            data = Data.objects.filter(system__name__regex=keyword)
-        else:
-            data = Data.objects.filter(gene_name__regex=keyword) | Data.objects.filter(protein_name__regex=keyword)
+    request_body = request.body.decode('utf-8')
+    request_dict = json.loads(request_body)
+    system = request_dict['system']
+    species = request_dict['species']
+    name = request_dict['name']
+    data = Data.objects.all()
+    if system:
+        data = data.filter(system__name__regex=system)
+    if species:
+        data = data.filter(species__name__regex=species)
+    if name:
+        data = data.filter(Accession__regex=name)
+    length = len(data)
+    data = data[page * pageSize: (page+1) * pageSize]
 
     for curr in data:
         dataList.append({
             "id": curr.id,
+            "assembly": curr.Assembly,
+            "lociid": curr.LociID,
+            "accession": curr.Accession,
+            "contigid": curr.ContigID,
+            "start": curr.Start,
+            "end": curr.End,
             "species": curr.species.name,
             "system": curr.system.name,
-            "gene": curr.gene_name,
-            "protein": curr.protein_name
         })
 
     return JsonResponse({
         "code": 200,
-        "data": dataList
+        "data": dataList,
+        "length": length
     })
 
 
@@ -102,7 +90,6 @@ def system(request):
 
 # Download All Data --- `GET /download`
 # Download Data by id list --- `POST /download`
-@csrf_exempt
 def download(request):
     response = HttpResponse(
         content_type='text/csv',
@@ -113,16 +100,80 @@ def download(request):
     if request.method == 'GET':
         data = Data.objects.all()
         for curr in data:
-            row = [curr.id, curr.species.name, curr.system.name, curr.gene_name, curr.protein_name]
+            row = [curr.id, curr.Assembly, curr.LociID, curr.Accession, curr.ContigID, curr.Start, curr.End, curr.system.name, curr.species.name]
             writer.writerow(row)
     elif request.method == 'POST':
         request_body = request.body.decode('utf-8')
         request_dict = json.loads(request_body)
         idList = request_dict['index']
         for id in idList:
-            data = Data.objects.get(id=id)
-            row = [data.id, data.species, data.system, data.gene_name, data.protein_name]
+            curr = Data.objects.get(id=id)
+            row = [curr.id, curr.Assembly, curr.LociID, curr.Accession, curr.ContigID, curr.Start, curr.End, curr.system.name, curr.species.name]
             writer.writerow(row)
     return response
 
 
+def upload_page(request):
+    return render(request, './UploadPage.html')
+
+def upload_csv(request):
+    system = request.POST.get('system')
+    species = request.POST.get('species')
+
+    species_obj = Species(name=species)
+
+    try:
+        species_obj.save()
+    except django.db.IntegrityError:
+        species_obj = Species.objects.get(name=species)
+        pass
+    system_obj = System(name=system, species=species_obj)
+    try:
+        system_obj.save()
+    except django.db.IntegrityError:
+        system_obj = System.objects.get(name=system)
+        pass
+    dataList = []
+
+    file = request.FILES.get('file')
+    file_data = file.read().decode("utf-8")
+    lines = file_data.split('\n')
+    for line in lines:
+        line = line.split('\t')
+        if len(line) > 1:
+            data = Data(Assembly=line[0],
+                        LociID=line[1],
+                        Accession=line[2],
+                        ContigID=line[3],
+                        Start=line[4],
+                        End=line[5],
+                        species=species_obj,
+                        system=system_obj)
+            dataList.append(data)
+    Data.objects.bulk_create(dataList)
+    return JsonResponse({'msg': 'success'})
+
+
+def mes(request):
+    data = {}
+    species_count = Species.objects.count()
+    system_count = System.objects.count()
+    archaea_count = System.objects.filter(species__name='Archaea').count()
+    bacteria_count = System.objects.filter(species__name='Bacteria').count()
+    data['species_count'] = species_count
+    data['system_count'] = system_count
+    data['archaea_count'] = archaea_count
+    data['bacteria_count'] = bacteria_count
+    archaea_name = []
+    archaea_num = []
+    for curr in System.objects.filter(species__name='Archaea'):
+        archaea_name.append(curr.name)
+        archaea_num.append(Data.objects.filter(system__name=curr.name).count())
+    data['archaea'] = {'x': archaea_name, 'y': archaea_num}
+    bacteria_name = []
+    bacteria_num = []
+    for curr in System.objects.filter(species__name='Bacteria'):
+        bacteria_name.append(curr.name)
+        bacteria_num.append(Data.objects.filter(system__name=curr.name).count())
+    data['bacteria'] = {'x': bacteria_name, 'y': bacteria_num}
+    return JsonResponse({'code': 200, 'data': data})
