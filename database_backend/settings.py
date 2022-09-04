@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-p-_!gw#mk*r$4ebubi67x*1_h(do#@#b4jooenc!#-o6y7lw^w
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -81,8 +81,8 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'resistant_system',
-        'USER': 'hungyam',
-        'PASSWORD': 'xhx000530',
+        'USER': 'root',
+        'PASSWORD': '1234',
         'HOST': '127.0.0.1',
         'PORT': '3306',
         'CONN_MAX_AGE': 3000,
@@ -114,13 +114,13 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Shanghai'
 
 USE_I18N = True
 
 USE_L10N = True
 
-USE_TZ = True
+USE_TZ = False
 
 
 # Static files (CSS, JavaScript, Images)
@@ -138,6 +138,7 @@ CORS_ORIGIN_ALLOW_ALL = True
 CORS_ORIGIN_WHITELIST = (
     # 这里添加你允许的跨域来源
     'http://127.0.0.1',
+    'http://39.108.14.181'
 )
 
 # 添加运行的请求方法

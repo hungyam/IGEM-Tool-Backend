@@ -96,7 +96,7 @@ def download(request):
         headers={'Content-Disposition': 'attachment; filename="ResistantSystemDataAll.csv"'},
     )
     writer = csv.writer(response)
-    writer.writerow(['id', 'species', 'system', 'gene name', 'protein name'])
+    writer.writerow(['id', 'Assembly', 'LociID', 'Accession', 'ContigID', 'Start', 'End', 'System', 'Species'])
     if request.method == 'GET':
         data = Data.objects.all()
         for curr in data:
@@ -158,22 +158,18 @@ def mes(request):
     data = {}
     species_count = Species.objects.count()
     system_count = System.objects.count()
-    archaea_count = System.objects.filter(species__name='Archaea').count()
-    bacteria_count = System.objects.filter(species__name='Bacteria').count()
     data['species_count'] = species_count
     data['system_count'] = system_count
-    data['archaea_count'] = archaea_count
-    data['bacteria_count'] = bacteria_count
-    archaea_name = []
-    archaea_num = []
+    data['archaea_count'] = 3412
+    data['bacteria_count'] = 62291
+    archaea = []
     for curr in System.objects.filter(species__name='Archaea'):
-        archaea_name.append(curr.name)
-        archaea_num.append(Data.objects.filter(system__name=curr.name).count())
-    data['archaea'] = {'x': archaea_name, 'y': archaea_num}
-    bacteria_name = []
-    bacteria_num = []
+        obj = {'value': Data.objects.filter(system__name=curr.name).count(), 'name': curr.name}
+        archaea.append(obj)
+    data['archaea'] = archaea
+    bacteria = []
     for curr in System.objects.filter(species__name='Bacteria'):
-        bacteria_name.append(curr.name)
-        bacteria_num.append(Data.objects.filter(system__name=curr.name).count())
-    data['bacteria'] = {'x': bacteria_name, 'y': bacteria_num}
+        obj = {'value': Data.objects.filter(system__name=curr.name).count(), 'name': curr.name}
+        bacteria.append(obj)
+    data['bacteria'] = bacteria
     return JsonResponse({'code': 200, 'data': data})
