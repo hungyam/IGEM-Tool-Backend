@@ -10,7 +10,7 @@ class Species(models.Model):
 
 
 class System(models.Model):
-    name = models.CharField(max_length=100, unique=True)
+    name = models.CharField(max_length=100)
     species = models.ForeignKey('Species', on_delete=models.CASCADE)
 
     def __str__(self):
