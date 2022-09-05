@@ -5,15 +5,15 @@
     <title>Title</title>
 </head>
 <body>
-    <form enctype="multipart/form-data" method="post" action="/upload_csv/">
-        <div>
-            <label for="system">System
-                <input name="system"/>
-            </label>
-        </div>
+<div style="display: flex; width: 80%; margin: 100px auto">
+    <form enctype="multipart/form-data" method="post" action="/upload_csv/0/" style="flex: 1;">
+        <div>Upload Taxonomy</div>
         <div>
             <label for="species">Species
-                <input name="species"/>
+                <select name="species" type="radio">
+                    <option value="Archaea">Archaea</option>
+                    <option value="Bacteria">Bacteria</option>
+                </select>
             </label>
         </div>
         <div>
@@ -23,5 +23,50 @@
         </div>
         <button type="submit">提交</button>
     </form>
+    <form enctype="multipart/form-data" method="post" action="/upload_csv/1/" style="flex: 1;">
+        <div>Upload Uniport</div>
+        <div>
+            <label for="species">Species
+                <select name="species" type="radio">
+                    <option value="Archaea">Archaea</option>
+                    <option value="Bacteria">Bacteria</option>
+                </select>
+            </label>
+        </div>
+        <div>
+            <label for="system">System
+                <input name="system"/>
+            </label>
+        </div>
+        <div>
+            <label for="file">file
+                <input type="file" name="file"/>
+            </label>
+        </div>
+        <button type="submit">提交</button>
+    </form>
+    <form enctype="multipart/form-data" method="post" action="/upload_csv/2/" style="flex: 1;">
+        <div>Upload Data</div>
+        <div>
+            <label for="species">Species
+                <select name="species" type="radio">
+                    <option value="Archaea">Archaea</option>
+                    <option value="Bacteria">Bacteria</option>
+                </select>
+            </label>
+        </div>
+        <div>
+            <label for="system">System
+                <input name="system"/>
+            </label>
+        </div>
+        <div>
+            <label for="file">file
+                <input type="file" name="file"/>
+            </label>
+        </div>
+        <button type="submit">提交</button>
+    </form>
+</div>
 </body>
 </html>

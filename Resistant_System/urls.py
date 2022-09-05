@@ -12,5 +12,5 @@ urlpatterns = [
 
 
     path('download/', views.download, name='download'),
-    path('upload_csv/', views.upload_csv, name='upload_csv')
+    path('upload_csv/<int:type>/', views.upload_csv, name='upload_csv'),
 ]

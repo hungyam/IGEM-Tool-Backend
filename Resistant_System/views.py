@@ -39,7 +39,7 @@ def data(request, page):
     if name:
         data = data.filter(Accession__regex=name)
     length = len(data)
-    data = data[page * pageSize: (page+1) * pageSize]
+    data = data[page * pageSize: (page + 1) * pageSize]
 
     for curr in data:
         dataList.append({
@@ -52,6 +52,8 @@ def data(request, page):
             "end": curr.End,
             "species": curr.species.name,
             "system": curr.system.name,
+            "organism": curr.Organism,
+            "entry": curr.Entry
         })
 
     return JsonResponse({
@@ -88,6 +90,7 @@ def system(request):
         "species": dataList
     })
 
+
 # Download All Data --- `GET /download`
 # Download Data by id list --- `POST /download`
 def download(request):
@@ -100,7 +103,8 @@ def download(request):
     if request.method == 'GET':
         data = Data.objects.all()
         for curr in data:
-            row = [curr.id, curr.Assembly, curr.LociID, curr.Accession, curr.ContigID, curr.Start, curr.End, curr.system.name, curr.species.name]
+            row = [curr.id, curr.Assembly, curr.LociID, curr.Accession, curr.ContigID, curr.Start, curr.End,
+                   curr.system.name, curr.species.name]
             writer.writerow(row)
     elif request.method == 'POST':
         request_body = request.body.decode('utf-8')
@@ -108,7 +112,8 @@ def download(request):
         idList = request_dict['index']
         for id in idList:
             curr = Data.objects.get(id=id)
-            row = [curr.id, curr.Assembly, curr.LociID, curr.Accession, curr.ContigID, curr.Start, curr.End, curr.system.name, curr.species.name]
+            row = [curr.id, curr.Assembly, curr.LociID, curr.Accession, curr.ContigID, curr.Start, curr.End,
+                   curr.system.name, curr.species.name]
             writer.writerow(row)
     return response
 
@@ -116,41 +121,73 @@ def download(request):
 def upload_page(request):
     return render(request, './UploadPage.html')
 
-def upload_csv(request):
+
+def upload_csv(request, type):
     system = request.POST.get('system')
     species = request.POST.get('species')
-
     species_obj = Species(name=species)
-
+    system_obj = None
     try:
         species_obj.save()
     except django.db.IntegrityError:
         species_obj = Species.objects.get(name=species)
         pass
-    system_obj = System(name=system, species=species_obj)
-    try:
-        system_obj.save()
-    except django.db.IntegrityError:
-        system_obj = System.objects.get(name=system)
-        pass
-    dataList = []
 
+    if type == 1 or type == 2:
+        system_obj = System(name=system, species=species_obj)
+        try:
+            system_obj.save()
+        except django.db.IntegrityError:
+            system_obj = System.objects.get(name=system)
+            pass
+
+    dataList = []
     file = request.FILES.get('file')
     file_data = file.read().decode("utf-8")
     lines = file_data.split('\n')
-    for line in lines:
-        line = line.split('\t')
-        if len(line) > 1:
-            data = Data(Assembly=line[0],
-                        LociID=line[1],
-                        Accession=line[2],
-                        ContigID=line[3],
-                        Start=line[4],
-                        End=line[5],
-                        species=species_obj,
-                        system=system_obj)
-            dataList.append(data)
-    Data.objects.bulk_create(dataList)
+    if type == 0:
+        for line in lines:
+            line = line.split(',')
+            if len(line) > 1:
+                data = Taxonomy(species=species_obj,
+                                Assembly=line[0],
+                                Organism=line[1])
+                dataList.append(data)
+        Taxonomy.objects.bulk_create(dataList)
+    elif type == 1:
+        for line in lines:
+            line = line.split('\t')
+            if len(line) > 1:
+                data = Uniport(species=species_obj,
+                               system=system_obj,
+                               Accession=line[0],
+                               Entry=line[1])
+                dataList.append(data)
+        Uniport.objects.bulk_create(dataList)
+    else:
+        for line in lines:
+            line = line.split('\t')
+            if len(line) > 1:
+                organism_name = ''
+                organism = Taxonomy.objects.filter(species=species_obj).filter(Assembly=line[0]).first()
+                if organism:
+                    organism_name = organism.Organism
+                entry_name = ''
+                entry = Uniport.objects.filter(species=species_obj).filter(system=system_obj).filter(Accession=line[2]).first()
+                if entry:
+                    entry_name = entry.Entry
+                data = Data(Assembly=line[0],
+                            LociID=line[1],
+                            Accession=line[2],
+                            ContigID=line[3],
+                            Start=line[4],
+                            End=line[5],
+                            species=species_obj,
+                            system=system_obj,
+                            Organism=organism_name,
+                            Entry=entry_name)
+                dataList.append(data)
+        Data.objects.bulk_create(dataList)
     return JsonResponse({'msg': 'success'})
 
 

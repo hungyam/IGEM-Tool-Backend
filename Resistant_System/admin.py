@@ -4,3 +4,5 @@ from .models import *
 admin.site.register(Data)
 admin.site.register(Species)
 admin.site.register(System)
+admin.site.register(Uniport)
+admin.site.register(Taxonomy)
