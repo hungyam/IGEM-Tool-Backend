@@ -1,4 +1,4 @@
-import django.db
+from django.db import connection
 from django.http import JsonResponse, HttpResponse
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
@@ -15,6 +15,8 @@ def reloadData(request):
     Species.objects.all().delete()
     System.objects.all().delete()
     Data.objects.all().delete()
+    Taxonomy.objects.all().delete()
+    Uniport.objects.all().delete()
     return JsonResponse({
         "code": 200,
         "mes": "success"
@@ -125,21 +127,17 @@ def upload_page(request):
 def upload_csv(request, type):
     system = request.POST.get('system')
     species = request.POST.get('species')
-    species_obj = Species(name=species)
+    species_obj = Species.objects.filter(name=species).first()
     system_obj = None
-    try:
+    if not species_obj:
+        species_obj = Species(name=species)
         species_obj.save()
-    except django.db.IntegrityError:
-        species_obj = Species.objects.get(name=species)
-        pass
 
     if type == 1 or type == 2:
-        system_obj = System(name=system, species=species_obj)
-        try:
+        system_obj = System.objects.filter(name=system, species=species_obj).first()
+        if not system_obj:
+            system_obj = System(name=system, species=species_obj)
             system_obj.save()
-        except django.db.IntegrityError:
-            system_obj = System.objects.get(name=system)
-            pass
 
     dataList = []
     file = request.FILES.get('file')
@@ -158,36 +156,33 @@ def upload_csv(request, type):
         for line in lines:
             line = line.split('\t')
             if len(line) > 1:
-                data = Uniport(species=species_obj,
-                               system=system_obj,
-                               Accession=line[0],
-                               Entry=line[1])
-                dataList.append(data)
-        Uniport.objects.bulk_create(dataList)
+                data = Uniport.objects.filter(
+                    species=species_obj,
+                    system=system_obj,
+                    Accession=line[0]
+                ).first()
+                if data:
+                    data.Entry = data.Entry + ',' + line[1]
+                    data.save()
+                else:
+                    Uniport.objects.create(species=species_obj,
+                                           system=system_obj,
+                                           Accession=line[0],
+                                           Entry=line[1])
     else:
         for line in lines:
             line = line.split('\t')
             if len(line) > 1:
-                organism_name = ''
-                organism = Taxonomy.objects.filter(species=species_obj).filter(Assembly=line[0]).first()
-                if organism:
-                    organism_name = organism.Organism
-                entry_name = ''
-                entry = Uniport.objects.filter(species=species_obj).filter(system=system_obj).filter(Accession=line[2]).first()
-                if entry:
-                    entry_name = entry.Entry
-                data = Data(Assembly=line[0],
+                data = Seed(Assembly=line[0],
                             LociID=line[1],
                             Accession=line[2],
                             ContigID=line[3],
                             Start=line[4],
                             End=line[5],
                             species=species_obj,
-                            system=system_obj,
-                            Organism=organism_name,
-                            Entry=entry_name)
+                            system=system_obj)
                 dataList.append(data)
-        Data.objects.bulk_create(dataList)
+        Seed.objects.bulk_create(dataList)
     return JsonResponse({'msg': 'success'})
 
 
@@ -210,3 +205,31 @@ def mes(request):
         bacteria.append(obj)
     data['bacteria'] = bacteria
     return JsonResponse({'code': 200, 'data': data})
+
+
+def join_table(request):
+    Data.objects.all().delete()
+    coursor = connection.cursor()
+    coursor.execute('SELECT Seed.*, Taxonomy.Organism, Uniport.Entry FROM Resistant_System_seed AS Seed LEFT JOIN Resistant_System_taxonomy AS Taxonomy ON Taxonomy.species_id = Seed.species_id AND Taxonomy.Assembly = Seed.Assembly LEFT JOIN Resistant_System_uniport AS Uniport ON Seed.species_id = Uniport.species_id AND Seed.system_id = Uniport.system_id AND Seed.Accession = Uniport.Accession')
+    raw = coursor.fetchall()
+    data_list = []
+    for row in raw:
+        organism = row[9]
+        if not organism:
+            organism = ''
+        entry = row[10]
+        if not entry:
+            entry = ''
+        data = Data(Assembly=row[1],
+                    LociID=row[2],
+                    Accession=row[3],
+                    ContigID=row[4],
+                    Start=row[5],
+                    End=row[6],
+                    species_id=row[7],
+                    system_id=row[8],
+                    Organism=organism,
+                    Entry=entry)
+        data_list.append(data)
+    Data.objects.bulk_create(data_list)
+    return JsonResponse({'code': 200})

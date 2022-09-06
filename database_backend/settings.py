@@ -82,7 +82,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'resistant_system',
         'USER': 'root',
-        'PASSWORD': '1234',
+        'PASSWORD': 'xhx000530',
         'HOST': '127.0.0.1',
         'PORT': '3306',
         'CONN_MAX_AGE': 3000,

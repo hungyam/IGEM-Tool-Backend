@@ -14,7 +14,7 @@ class System(models.Model):
     species = models.ForeignKey('Species', on_delete=models.CASCADE)
 
     def __str__(self):
-        return self.name
+        return self.species.name + ' ' + self.name
 
 class Taxonomy(models.Model):
     species = models.ForeignKey('Species', on_delete=models.CASCADE)
@@ -28,7 +28,20 @@ class Uniport(models.Model):
     species = models.ForeignKey('Species', on_delete=models.CASCADE)
     system = models.ForeignKey('System', on_delete=models.CASCADE)
     Accession = models.CharField(max_length=100)
-    Entry = models.CharField(max_length=100)
+    Entry = models.TextField()
+
+    def __str__(self):
+        return self.species.name + ' ' + self.system.name + ' ' + self.Accession
+
+class Seed(models.Model):
+    Assembly = models.CharField(max_length=100)
+    LociID = models.CharField(max_length=100)
+    Accession = models.CharField(max_length=100)
+    ContigID = models.CharField(max_length=100)
+    Start = models.CharField(max_length=100)
+    End = models.CharField(max_length=100)
+    species = models.ForeignKey('Species', on_delete=models.CASCADE)
+    system = models.ForeignKey('System', on_delete=models.CASCADE)
 
     def __str__(self):
         return self.species.name + ' ' + self.system.name + ' ' + self.Accession
@@ -44,7 +57,7 @@ class Data(models.Model):
     species = models.ForeignKey('Species', on_delete=models.CASCADE)
     system = models.ForeignKey('System', on_delete=models.CASCADE)
     Organism = models.CharField(max_length=1000, default='')
-    Entry = models.CharField(max_length=100, default='')
+    Entry = models.TextField()
 
     def __str__(self):
         return self.species.name + ' ' + self.system.name + ' ' + self.Accession

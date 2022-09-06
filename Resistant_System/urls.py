@@ -13,4 +13,6 @@ urlpatterns = [
 
     path('download/', views.download, name='download'),
     path('upload_csv/<int:type>/', views.upload_csv, name='upload_csv'),
+
+    path('test/', views.join_table)
 ]
