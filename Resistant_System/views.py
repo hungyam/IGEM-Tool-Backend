@@ -155,7 +155,7 @@ def upload_csv(request, type):
     elif type == 1:
         for line in lines:
             line = line.split('\t')
-            if len(line) > 1:
+            if len(line) > 1 or line[0] != 'From':
                 data = Uniport.objects.filter(
                     species=species_obj,
                     system=system_obj,
