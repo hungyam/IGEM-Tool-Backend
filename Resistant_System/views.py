@@ -65,7 +65,7 @@ def detail_data(request, id):
     data = Seed.objects.filter(id=id).first()
     if data:
         organism_name = ''
-        organism = Taxonomy.objects.filter(species__name=data.species.id).filter(Assembly=data.Assembly).first()
+        organism = Taxonomy.objects.filter(species_id=data.species.id).filter(Assembly=data.Assembly).first()
         if organism:
             organism_name = organism.Organism
 
