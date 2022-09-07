@@ -196,12 +196,12 @@ def mes(request):
     data['bacteria_count'] = 62291
     archaea = []
     for curr in System.objects.filter(species__name='Archaea'):
-        obj = {'value': Data.objects.filter(system__name=curr.name).count(), 'name': curr.name}
+        obj = {'value': Data.objects.filter(system=curr).count(), 'name': curr.name}
         archaea.append(obj)
     data['archaea'] = archaea
     bacteria = []
     for curr in System.objects.filter(species__name='Bacteria'):
-        obj = {'value': Data.objects.filter(system__name=curr.name).count(), 'name': curr.name}
+        obj = {'value': Data.objects.filter(system=curr).count(), 'name': curr.name}
         bacteria.append(obj)
     data['bacteria'] = bacteria
     return JsonResponse({'code': 200, 'data': data})
