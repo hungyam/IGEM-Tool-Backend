@@ -155,20 +155,13 @@ def upload_csv(request, type):
     elif type == 1:
         for line in lines:
             line = line.split('\t')
-            if len(line) > 1 or line[0] != 'From':
-                data = Uniport.objects.filter(
-                    species=species_obj,
-                    system=system_obj,
-                    Accession=line[0]
-                ).first()
-                if data:
-                    data.Entry = data.Entry + ',' + line[1]
-                    data.save()
-                else:
-                    Uniport.objects.create(species=species_obj,
-                                           system=system_obj,
-                                           Accession=line[0],
-                                           Entry=line[1])
+            if len(line) > 1:
+                data = Uniport(species=species_obj,
+                               system=system_obj,
+                               Accession=line[0],
+                               Entry=line[1])
+                dataList.append(data)
+        Uniport.objects.bulk_create(dataList)
     else:
         for line in lines:
             line = line.split('\t')
@@ -210,7 +203,8 @@ def mes(request):
 def join_table(request):
     Data.objects.all().delete()
     coursor = connection.cursor()
-    coursor.execute('SELECT Seed.*, Taxonomy.Organism, Uniport.Entry FROM Resistant_System_seed AS Seed LEFT JOIN Resistant_System_taxonomy AS Taxonomy ON Taxonomy.species_id = Seed.species_id AND Taxonomy.Assembly = Seed.Assembly LEFT JOIN Resistant_System_uniport AS Uniport ON Seed.species_id = Uniport.species_id AND Seed.system_id = Uniport.system_id AND Seed.Accession = Uniport.Accession')
+    coursor.execute(
+        'SELECT Seed.*, Taxonomy.Organism, Uniport.Entry FROM Resistant_System_seed AS Seed LEFT JOIN Resistant_System_taxonomy AS Taxonomy ON Taxonomy.species_id = Seed.species_id AND Taxonomy.Assembly = Seed.Assembly LEFT JOIN Resistant_System_uniport AS Uniport ON Seed.species_id = Uniport.species_id AND Seed.system_id = Uniport.system_id AND Seed.Accession = Uniport.Accession')
     raw = coursor.fetchall()
     data_list = []
     for row in raw:
