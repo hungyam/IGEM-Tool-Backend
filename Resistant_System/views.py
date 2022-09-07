@@ -23,8 +23,6 @@ def reloadData(request):
     })
 
 
-# Get all data --- `GET /data`
-# Get data by key word --- `POST /data`
 def data(request, page):
     pageSize = 50
     dataList = []
@@ -33,7 +31,7 @@ def data(request, page):
     system = request_dict['system']
     species = request_dict['species']
     name = request_dict['name']
-    data = Data.objects.all()
+    data = Seed.objects.all()
     if system:
         data = data.filter(system__name__regex=system)
     if species:
@@ -53,9 +51,7 @@ def data(request, page):
             "start": curr.Start,
             "end": curr.End,
             "species": curr.species.name,
-            "system": curr.system.name,
-            "organism": curr.Organism,
-            "entry": curr.Entry
+            "system": curr.system.name
         })
 
     return JsonResponse({
@@ -63,6 +59,38 @@ def data(request, page):
         "data": dataList,
         "length": length
     })
+
+
+def detail_data(request, id):
+    data = Seed.objects.filter(id=id).first()
+    if data:
+        organism_name = ''
+        organism = Taxonomy.objects.filter(species__name=data.species.id).filter(Assembly=data.Assembly).first()
+        if organism:
+            organism_name = organism.Organism
+
+        entry_name = ''
+        entry = Uniport.objects.filter().filter(species_id=data.species.id).filter(system_id=data.system.id).filter(
+            Accession=data.Accession).first()
+        if entry:
+            entry_name = entry.Entry
+
+        return JsonResponse({
+            "code": 200,
+            "data": {
+                "id": data.id,
+                "assembly": data.Assembly,
+                "lociid": data.LociID,
+                "accession": data.Accession,
+                "contigid": data.ContigID,
+                "start": data.Start,
+                "end": data.End,
+                "species": data.species.name,
+                "system": data.system.name,
+                "organism": organism_name,
+                "entry": entry_name
+            }
+        })
 
 
 # Get all species --- `GET /species`
