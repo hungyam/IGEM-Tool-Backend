@@ -7,6 +7,7 @@ from .models import *
 import json
 import csv
 from django.core.cache import cache
+from . import globalvar as gl
 
 
 # Create your views here.
@@ -32,11 +33,11 @@ def data(request, page):
     system = request_dict['system']
     species = request_dict['species']
     name = request_dict['name']
-    data = cache.get('Seed_List')
+    data = gl.get_value('Seed_List')
     if not data:
         print('GET')
         data = Seed.objects.all()
-        cache.set('Seed_List', data, 60 * 60 * 24)
+        gl.set_value('Seed_List', data)
     if system:
         data = data.filter(system__name__regex=system)
     if species:
