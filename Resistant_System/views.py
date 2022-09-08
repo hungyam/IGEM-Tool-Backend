@@ -6,6 +6,7 @@ from django.views.decorators.csrf import csrf_exempt
 from .models import *
 import json
 import csv
+from django.core.cache import cache
 
 
 # Create your views here.
@@ -23,11 +24,6 @@ def reloadData(request):
         "mes": "success"
     })
 
-@cache_page(60*60)
-def all_data(request):
-    data = Seed.objects.all()
-    return data
-
 def data(request, page):
     pageSize = 50
     dataList = []
@@ -36,7 +32,11 @@ def data(request, page):
     system = request_dict['system']
     species = request_dict['species']
     name = request_dict['name']
-    data = all_data(request)
+    data = cache.get('Seed_List')
+    if not data:
+        print('GET')
+        data = Seed.objects.all()
+        cache.set('Seed_List', data, 60 * 60 * 24)
     if system:
         data = data.filter(system__name__regex=system)
     if species:

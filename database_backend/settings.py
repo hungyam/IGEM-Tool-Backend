@@ -44,7 +44,6 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
-    # 'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -53,10 +52,11 @@ MIDDLEWARE = [
 ROOT_URLCONF = 'database_backend.urls'
 
 CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-        'LOCATION': 'cache',
-    }
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": "redis://:@127.0.0.1:6379/1",
+        'TIMEOUT': 60 * 60 * 24,
+    },
 }
 
 TEMPLATES = [
@@ -86,7 +86,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'resistant_system',
         'USER': 'root',
-        'PASSWORD': '1234',
+        'PASSWORD': 'xhx000530',
         'HOST': '127.0.0.1',
         'PORT': '3306',
         'CONN_MAX_AGE': 3000,
