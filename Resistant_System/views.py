@@ -1,6 +1,7 @@
 from django.db import connection
 from django.http import JsonResponse, HttpResponse
 from django.shortcuts import render
+from django.views.decorators.cache import cache_page
 from django.views.decorators.csrf import csrf_exempt
 from .models import *
 import json
@@ -22,6 +23,10 @@ def reloadData(request):
         "mes": "success"
     })
 
+@cache_page(60*60)
+def all_data(request):
+    data = Seed.objects.all()
+    return data
 
 def data(request, page):
     pageSize = 50
@@ -31,7 +36,7 @@ def data(request, page):
     system = request_dict['system']
     species = request_dict['species']
     name = request_dict['name']
-    data = Seed.objects.all()
+    data = all_data(request)
     if system:
         data = data.filter(system__name__regex=system)
     if species:
@@ -217,12 +222,12 @@ def mes(request):
     data['bacteria_count'] = 62291
     archaea = []
     for curr in System.objects.filter(species__name='Archaea'):
-        obj = {'value': Data.objects.filter(system=curr).count(), 'name': curr.name}
+        obj = {'value': Seed.objects.filter(system=curr).count(), 'name': curr.name}
         archaea.append(obj)
     data['archaea'] = archaea
     bacteria = []
     for curr in System.objects.filter(species__name='Bacteria'):
-        obj = {'value': Data.objects.filter(system=curr).count(), 'name': curr.name}
+        obj = {'value': Seed.objects.filter(system=curr).count(), 'name': curr.name}
         bacteria.append(obj)
     data['bacteria'] = bacteria
     return JsonResponse({'code': 200, 'data': data})
